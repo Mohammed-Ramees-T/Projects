@@ -324,6 +324,8 @@ sudo systemctl start ssh
 
 This installs the SSH server, allowing remote login access to your machine and ensures the SSH service starts on boot and runs immediately.
 
+---
+
 ### 3.8 Attacks Performed
 
 Now it’s time to simulate an attack on your Ubuntu machine.
@@ -385,6 +387,7 @@ Add visualizations using Suricata data
 
 <img width="673" height="498" alt="image" src="https://github.com/user-attachments/assets/b868c8b6-dca7-4476-bbb7-42fa256218b7" />
 
+---
 
 ## 4 Results and Observations
 
