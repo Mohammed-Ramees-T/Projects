@@ -398,9 +398,10 @@ Add visualizations using Suricata data
 
 ### 4.1 Project Summary
 
-**This setup demonstrates how to detect network-based attacks using Suricata IDS integrated with the ELK Stack (Elasticsearch, Logstash, and Kibana) in a virtual lab environment. An Ubuntu machine was used as the target, while Kali Linux simulated attacks.**
+This setup demonstrates how to detect network-based attacks using Suricata IDS integrated with the ELK Stack (Elasticsearch, Logstash, and Kibana) in a virtual lab environment. An Ubuntu machine was used as the target, while Kali Linux simulated attacks.
 
 An SSH brute-force attack was launched using Hydra. Suricata detected the repeated login attempts and generated alerts. The logs were sent to ELK via Filebeat, processed through Logstash, and visualized in Kibana for easy monitoring and analysis.
+
 ---
 **Thank you for taking the time to read this walkthrough!**
 I hope it helped you understand how to set up and visualize network attack detection using Suricata and the ELK Stack. Feel free to leave feedback or share your thoughts!
