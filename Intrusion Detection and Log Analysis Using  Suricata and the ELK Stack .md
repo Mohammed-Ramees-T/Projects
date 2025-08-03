@@ -1,4 +1,3 @@
-
 # Intrusion Detection and Log Analysis Using Suricata and the ELK Stack
 
 ## A Project Report
@@ -135,6 +134,8 @@ The **ELK Stack** is a widely used, open-source suite for **centralized logging*
 
 ### 3.1 Install Suricata
 
+Execute the given commands to setup and install the latest Stable Suricata on Ubuntu.
+
 
 ```bash
 sudo apt-get install software-properties-common
@@ -145,12 +146,17 @@ sudo apt-get install suricata
 <img width="602" height="149" alt="image" src="https://github.com/user-attachments/assets/d5d3e871-aeb0-4638-8510-55e1da47f6c6" />
 
 
+Once Suricata is installed, let’s now check if its running already by using the following command.
 sudo systemctl status suricata
 ```
 <img width="609" height="198" alt="image" src="https://github.com/user-attachments/assets/91e05154-f420-48d3-bc9b-5665968b27dd" />
 
+As we can see that Suricata is already running
+Now that Suricata is successfully installed, and its service is running successfully, let’s explore its configuration files located in the /etc/suricata/ directory.
+<img width="940" height="235" alt="image" src="https://github.com/user-attachments/assets/641ca89a-6379-40ba-8f8c-a21cd30d2ed0" />
 
-Main configuration files location: `/etc/suricata/`
+
+Here's a shortened explanation of the four essential Suricata configuration files:
 
 - `classification.config`: Categorizes detected events  
 - `reference.config`: Provides threat reference info  
@@ -164,29 +170,55 @@ Add the following rule to `/etc/suricata/rules/local.rules`:
 ```bash
 alert ssh any any -> any any (msg:"SSH Brute Force Attempt"; flow:to_server,established; content:"SSH"; threshold:type both, track by_src, count 5, seconds 60; classtype:attempted-admin; sid:1000001; rev:1;)
 ```
+<img width="996" height="91" alt="image" src="https://github.com/user-attachments/assets/80f8f656-cb62-4e3d-a7f6-68ede32a6630" />
+
+This rule detects and alerts when an IP makes 5 or more SSH connection attempts within 60 seconds, indicating a possible brute-force attack.
 
 #### 3.1.2 Configure Suricata
 
-Edit `suricata.yaml` to include the rule file and set output path.
+Edit the Suricata configuration file at /etc/suricata/suricata.yaml. Let’s look for default-rule-path, usually set to /var/lib/suricata/rules. If your custom rule file is in that folder, just use its name (e.g., custom.rules); if it's elsewhere, provide the full path. Since Suricata doesn’t create this file by default, we’ll leave it unchanged for now.
+
+<img width="463" height="134" alt="image" src="https://github.com/user-attachments/assets/7f6a396c-cf71-428b-9771-390de97af586" />
+
 
 Test config:
 
+Run the following command to check if your Suricata config file is correct:
 ```bash
 sudo suricata -T -c /etc/suricata/suricata.yaml -v
 ```
+<img width="463" height="134" alt="image" src="https://github.com/user-attachments/assets/5e32446d-351a-4d4d-81a1-56abd33ffc1c" />
+
+This verifies that the configuration is valid and there are no syntax errors before starting Suricata.
+Now we can start Suricata.
 
 ### 3.2 Install Elasticsearch
 
+Use the following command to install Elasticsearch:
 ```bash
 sudo apt install elasticsearch
 sudo systemctl start elasticsearch
 ```
+This installs the Elasticsearch service, which will store and index the logs collected from Suricata.
+
+<img width="872" height="289" alt="image" src="https://github.com/user-attachments/assets/1ffa43d4-22c6-46cf-bb09-a9e99024cf3d" />
+
+### 3.4 Install Logstash
+
+Run this command to install Logstash:
+```bash
+sudo apt install logstash
+```
+<img width="881" height="203" alt="image" src="https://github.com/user-attachments/assets/b3239899-b83f-4967-80d9-3845979e7c73" />
+
+Logstash will collect, filter, and forward logs (like those from Suricata) to Elasticsearch for indexing
 
 ### 3.3 Install Filebeat
 
 ```bash
 sudo apt install filebeat
 ```
+This installs Filebeat, which will forward Suricata logs to Logstash
 
 Edit `/etc/filebeat/filebeat.yml`:
 
@@ -196,6 +228,8 @@ filebeat.inputs:
   enabled: true
   paths:
     - /var/log/suricata/eve.json
+
+Scroll down and find the output section. Comment out output.elasticsearch: and uncomment and edit output.logstash: like this:
 
 # Comment out Elasticsearch output
 #output.elasticsearch:
@@ -212,16 +246,43 @@ Start and enable Filebeat:
 sudo systemctl enable filebeat
 sudo systemctl start filebeat
 ```
-
-### 3.4 Install Logstash
-
-```bash
-sudo apt install logstash
-```
+Now Filebeat reads Suricata’s JSON logs and sends them to Logstash on port 5044, which processes and forwards them to Elasticsearch.
 
 #### 3.4.1 Logstash Pipeline Configuration
 
 Create `/etc/logstash/conf.d/suricata.conf` and define pipeline.
+
+```bash
+{
+  "input": {
+    "beats": {
+      "port": 5044
+    }
+  },
+  "filter": {
+    "json": {
+      "source": "message",
+      "skip_on_invalid_json": true
+    },
+    "condition": "[event_type] == \"alert\" and [alert][signature] =~ /SSH/",
+    "mutate": {
+      "add_tag": ["ssh_alert"]
+    }
+  },
+  "output": {
+    "elasticsearch": {
+      "hosts": ["http://localhost:9200"],
+      "index": "suricata-ssh"
+    }
+  }
+}
+
+```
+
+**What It Does:**
+Input: Listens for logs from Filebeat on port 5044
+Filter: Parses logs as JSON and tags SSH alerts
+Output: Sends filtered logs to Elasticsearch and stores them in the suricata-ssh index
 
 Start Logstash:
 
@@ -231,12 +292,18 @@ sudo systemctl start logstash
 
 ### 3.5 Install Kibana
 
+Install and start Kibana with the following commands:
+
 ```bash
 sudo apt install kibana
 sudo systemctl start kibana
 ```
+<img width="940" height="236" alt="image" src="https://github.com/user-attachments/assets/aed050fe-76da-4bcf-9425-c3ec08b1cafc" />
+
 
 Access via: `http://localhost:5601`
+
+This will open Kibana’s dashboard, where you can visualize Suricata logs and alerts.
 
 ### 3.6 Integration Steps
 
@@ -252,45 +319,81 @@ sudo apt install openssh-server
 sudo systemctl enable ssh
 sudo systemctl start ssh
 ```
+<img width="970" height="250" alt="image" src="https://github.com/user-attachments/assets/58be911d-d59c-492e-a3a2-8b5aa86a9bd3" />
+
+
+This installs the SSH server, allowing remote login access to your machine and ensures the SSH service starts on boot and runs immediately.
 
 ### 3.8 Attacks Performed
 
-SSH brute-force attack from Kali Linux using Hydra:
+Now it’s time to simulate an attack on your Ubuntu machine.
+
+**Find Ubuntu IP**
+On your Ubuntu system, run: ifconfig
+
+**SSH brute-force attack from Kali Linux using Hydra:**
 
 ```bash
 hydra -l ubuntu -P /usr/share/wordlists/rockyou.txt ssh://192.168.137.47
 ```
+
+<img width="1010" height="273" alt="image" src="https://github.com/user-attachments/assets/109a8e2a-199b-4170-b364-3db587ce4236" />
+
 
 ### 3.9 Detection
 
 Suricata detects repeated SSH login failures and logs them.  
 Alerts stored in `/var/log/suricata/eve.json`. Use `grep` to find alerts.
 
+To monitor live logs:
+
+```bash
+tail -f /var/log/suricata/eve.json
+```
+<img width="758" height="385" alt="image" src="https://github.com/user-attachments/assets/c9384430-65b3-479a-bdcc-9ed9399c3a63" />
+
+To search for the specific alert in logs:
+
+```bash
+grep -a “SSH Brute Force Attempt” /var/log/suricata/fast.log or eve.json
+```
+
+<img width="526" height="292" alt="image" src="https://github.com/user-attachments/assets/33ec2864-2b37-42b8-aeae-4745e489e251" />
+
+This command we use for confirm whether the attack was detected successfully.
+
 ### 3.10 Kibana Log Overview
 
-- Create index pattern (e.g., `filebeat-*`)  
 - Use **Discover** to explore logs with filters like `alert.signature: "*Brute*"`  
-- Build visualizations: top IPs, alerts over time  
-- Combine into real-time dashboards  
+
+<img width="970" height="520" alt="image" src="https://github.com/user-attachments/assets/ca2e96e8-1bf1-4358-b1dc-38dad9985e7b" />
+
+The rule worked successfully, and the “SSH Brute Force Attempt” alert is now visible in Kibana logs, confirming detection.
+
+**Brute Force Detection Dashboard**
+
+To visualize brute-force activity in Kibana:
+
+Go to **Kibana → Dashboard → Create New Dashboard**
+Add visualizations using Suricata data
+
+- Logs Over Time: Shows the number of Suricata alerts across a timeline. Sudden spikes indicate possible brute-force activity.
+
+<img width="696" height="473" alt="image" src="https://github.com/user-attachments/assets/6ecd3cfd-f0c7-4bd5-88c8-5f5ce3254748" />
+
+- Top Source IPs: Displays IP addresses generating the most alerts, helping identify the main attacker sources.
+
+<img width="673" height="498" alt="image" src="https://github.com/user-attachments/assets/b868c8b6-dca7-4476-bbb7-42fa256218b7" />
+
 
 ## 4 Results and Observations
 
 ### 4.1 Project Summary
 
-This project simulated and detected SSH brute-force attacks using Suricata and ELK Stack. Custom Suricata rules were used, logs were collected via Filebeat, parsed with Logstash, and visualized using Kibana dashboards.
+**This setup demonstrates how to detect network-based attacks using Suricata IDS integrated with the ELK Stack (Elasticsearch, Logstash, and Kibana) in a virtual lab environment. An Ubuntu machine was used as the target, while Kali Linux simulated attacks.**
 
-### 4.2 Conclusion and Future Scope
-
-- Demonstrated real-time alerting and visualization with open-source tools  
-- Setup is ideal for small SOC or learning environments  
-
-#### Future Improvements:
-
-- Integrate **Zeek** for deeper packet inspection  
-- Detect DNS tunneling, scans, web exploits  
-- Automate alert response  
-- Scale across multiple monitored hosts  
-
+An SSH brute-force attack was launched using Hydra. Suricata detected the repeated login attempts and generated alerts. The logs were sent to ELK via Filebeat, processed through Logstash, and visualized in Kibana for easy monitoring and analysis.
 ---
+**Thank you for taking the time to read this walkthrough!**
+I hope it helped you understand how to set up and visualize network attack detection using Suricata and the ELK Stack. Feel free to leave feedback or share your thoughts!
 
-**Thanks for reading!**
