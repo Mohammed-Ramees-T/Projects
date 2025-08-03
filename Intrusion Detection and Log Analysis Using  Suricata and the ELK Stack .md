@@ -108,12 +108,14 @@ Suricata monitors network traffic using **signature-based** and **anomaly-based*
 ### 2.2.3 ELK Stack (Elasticsearch, Logstash, and Kibana)
 
 The **ELK Stack** is a widely used, open-source suite for **centralized logging**, **search**, and **data visualization**. It is a powerful combination for monitoring, troubleshooting, and analyzing large volumes of log data.
+
 <img width="940" height="265" alt="image" src="https://github.com/user-attachments/assets/38cd5af8-6c51-4036-a8ed-862015989b1c" />
 
 #### 🔹 Logstash
 - Ingests data from various sources (logs, databases, sensors, etc.)
 - Transforms data (parsing, filtering, enriching)
 - Forwards data to a "stash" (usually Elasticsearch)
+
 <img width="545" height="337" alt="image" src="https://github.com/user-attachments/assets/a14ea17a-e86d-4e6d-8058-409fbfe1b199" />
 
 #### 🔹 Elasticsearch
@@ -151,8 +153,11 @@ sudo systemctl status suricata
 ```
 <img width="609" height="198" alt="image" src="https://github.com/user-attachments/assets/91e05154-f420-48d3-bc9b-5665968b27dd" />
 
+
 As we can see that Suricata is already running
 Now that Suricata is successfully installed, and its service is running successfully, let’s explore its configuration files located in the /etc/suricata/ directory.
+
+
 <img width="940" height="235" alt="image" src="https://github.com/user-attachments/assets/641ca89a-6379-40ba-8f8c-a21cd30d2ed0" />
 
 
@@ -172,7 +177,7 @@ alert ssh any any -> any any (msg:"SSH Brute Force Attempt"; flow:to_server,esta
 ```
 <img width="996" height="91" alt="image" src="https://github.com/user-attachments/assets/80f8f656-cb62-4e3d-a7f6-68ede32a6630" />
 
-This rule detects and alerts when an IP makes 5 or more SSH connection attempts within 60 seconds, indicating a possible brute-force attack.
+**This rule detects and alerts when an IP makes 5 or more SSH connection attempts within 60 seconds, indicating a possible brute-force attack.**
 
 #### 3.1.2 Configure Suricata
 
@@ -199,6 +204,7 @@ Use the following command to install Elasticsearch:
 sudo apt install elasticsearch
 sudo systemctl start elasticsearch
 ```
+
 This installs the Elasticsearch service, which will store and index the logs collected from Suricata.
 
 <img width="872" height="289" alt="image" src="https://github.com/user-attachments/assets/1ffa43d4-22c6-46cf-bb09-a9e99024cf3d" />
@@ -209,7 +215,9 @@ Run this command to install Logstash:
 ```bash
 sudo apt install logstash
 ```
+
 <img width="881" height="203" alt="image" src="https://github.com/user-attachments/assets/b3239899-b83f-4967-80d9-3845979e7c73" />
+
 
 Logstash will collect, filter, and forward logs (like those from Suricata) to Elasticsearch for indexing
 
