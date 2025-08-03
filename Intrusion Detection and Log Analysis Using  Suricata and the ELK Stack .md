@@ -1,14 +1,6 @@
 # Intrusion Detection and Log Analysis Using Suricata and the ELK Stack
 
-## A Project Report
-
-**Submitted by:**  
-**Mohammed Ramees T**  
-
-RedTeam Hacker Academy  
- 
 CICSA (Certified IT Infrastructure and Cyber SOC Analyst)  
-in Cyber Security 
  
 <img width="707" height="211" alt="image" src="https://github.com/user-attachments/assets/498c45f3-1cc7-4ab8-a1d5-8776c1a75bbf" />
 
